@@ -33,6 +33,9 @@ async def manage_events():
         end = event.end_time.astimezone(EASTERN)
         now_eastern = now.astimezone(EASTERN)
 
+        # Hard force-end at 11pm regardless of who's in the channel
+        force_end_time = now_eastern.replace(hour=23, minute=0, second=0, microsecond=0)
+
         if event.status != discord.EventStatus.active and start + datetime.timedelta(minutes=2) <= now_eastern < end:
             try:
                 await event.start()
@@ -43,7 +46,7 @@ async def manage_events():
         elif event.status != discord.EventStatus.completed and now_eastern >= end:
             try:
                 channel = bot.get_channel(event.channel_id)
-                if channel is None or len(channel.members) == 0:
+                if channel is None or len(channel.members) == 0 or now_eastern >= force_end_time:
                     await event.end()
                     print(f"Ended event: {event.name}")
             except Exception as e:
