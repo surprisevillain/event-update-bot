@@ -56,7 +56,7 @@ async def schedule_events():
     now = datetime.datetime.now(EASTERN)
 
     for event in events:
-        if event.entity_type not in [discord.EntityType.voice, discord.EntityType.stage_voice]:
+        if event.entity_type != discord.EntityType.voice:
             continue
 
         start = event.start_time.astimezone(EASTERN) + datetime.timedelta(minutes=2)
