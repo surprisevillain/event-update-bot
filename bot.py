@@ -34,10 +34,8 @@ async def end_event(event_id):
         if event.id == event_id:
             try:
                 channel = bot.get_channel(event.channel_id)
-                # Wait until channel is empty, check every 30s
                 while channel and len(channel.members) > 0:
                     now_eastern = datetime.datetime.now(EASTERN)
-                    # Force end at 11pm regardless
                     if now_eastern.hour >= 23:
                         break
                     await discord.utils.sleep_until(datetime.datetime.now(EASTERN) + datetime.timedelta(seconds=30))
@@ -50,22 +48,20 @@ async def schedule_events():
     guild = bot.get_guild(GUILD_ID)
     if guild is None:
         return
-
     scheduler.remove_all_jobs()
     events = await guild.fetch_scheduled_events()
     now = datetime.datetime.now(EASTERN)
-
     for event in events:
         if event.entity_type != discord.EntityType.voice:
             continue
-
         start = event.start_time.astimezone(EASTERN) + datetime.timedelta(minutes=2)
-        end = event.end_time.astimezone(EASTERN)
-
+        if event.end_time is None:
+            end = event.start_time.astimezone(EASTERN) + datetime.timedelta(hours=1)
+        else:
+            end = event.end_time.astimezone(EASTERN)
         if start > now:
             scheduler.add_job(start_event, 'date', run_date=start, args=[event.id], id=f"start_{event.id}")
             print(f"Scheduled start for: {event.name} at {start}")
-
         if end > now:
             scheduler.add_job(end_event, 'date', run_date=end, args=[event.id], id=f"end_{event.id}")
             print(f"Scheduled end for: {event.name} at {end}")
