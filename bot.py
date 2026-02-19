@@ -33,7 +33,7 @@ async def manage_events():
         end = event.end_time.astimezone(EASTERN)
         now_eastern = now.astimezone(EASTERN)
 
-        if event.status != discord.EventStatus.active and start <= now_eastern < end:
+        if event.status != discord.EventStatus.active and start + datetime.timedelta(minutes=2) <= now_eastern < end:
             try:
                 await event.start()
                 print(f"Started event: {event.name}")
