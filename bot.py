@@ -15,7 +15,7 @@ EASTERN = pytz.timezone("America/New_York")
 async def manage_events():
     now_eastern = datetime.datetime.now(EASTERN)
 
-    if now_eastern.weekday() > 3 or not (17 <= now_eastern.hour < 22):
+    if now_eastern.weekday() > 3 or not (17 <= now_eastern.hour < 23):
         return
 
     guild = bot.get_guild(GUILD_ID)
@@ -42,8 +42,10 @@ async def manage_events():
 
         elif event.status != discord.EventStatus.completed and now_eastern >= end:
             try:
-                await event.end()
-                print(f"Ended event: {event.name}")
+                channel = bot.get_channel(event.channel_id)
+                if channel is None or len(channel.members) == 0:
+                    await event.end()
+                    print(f"Ended event: {event.name}")
             except Exception as e:
                 print(f"Error ending {event.name}: {e}")
 
