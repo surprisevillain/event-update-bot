@@ -70,11 +70,14 @@ async def schedule_events():
 async def refresh_schedule():
     await schedule_events()
 
+@refresh_schedule.before_loop
+async def before_refresh():
+    await bot.wait_until_ready()
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
     scheduler.start()
-    await schedule_events()
     refresh_schedule.start()
 
 bot.run(os.environ["DISCORD_TOKEN"])
