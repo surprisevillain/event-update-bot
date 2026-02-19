@@ -2,6 +2,7 @@ import discord
 from discord.ext import tasks, commands
 import datetime
 import pytz
+import os
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
