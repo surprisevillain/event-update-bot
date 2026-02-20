@@ -20,6 +20,10 @@ async def start_event(event_id):
     for event in events:
         if event.id == event_id:
             try:
+                channel = bot.get_channel(event.channel_id)
+                if channel is None or len(channel.members) == 0:
+                    print(f"No one in channel, skipping start for: {event.name}")
+                    return
                 await event.start()
                 print(f"Started event: {event.name}")
             except Exception as e:
@@ -38,7 +42,7 @@ async def end_event(event_id):
                     now_eastern = datetime.datetime.now(EASTERN)
                     if now_eastern.hour >= 23:
                         break
-                    await discord.utils.sleep_until(datetime.datetime.now(EASTERN) + datetime.timedelta(seconds=30))
+                    await discord.utils.sleep_until(datetime.datetime.now(EASTERN) + datetime.timedelta(minutes=2))
                 await event.end()
                 print(f"Ended event: {event.name}")
             except Exception as e:
@@ -55,16 +59,27 @@ async def schedule_events():
         if event.entity_type != discord.EntityType.voice:
             continue
         start = event.start_time.astimezone(EASTERN) + datetime.timedelta(minutes=2)
-        if event.end_time is None:
-            end = event.start_time.astimezone(EASTERN) + datetime.timedelta(hours=1)
-        else:
-            end = event.end_time.astimezone(EASTERN)
+        end = event.start_time.astimezone(EASTERN) + datetime.timedelta(minutes=5)
         if start > now:
             scheduler.add_job(start_event, 'date', run_date=start, args=[event.id], id=f"start_{event.id}")
             print(f"Scheduled start for: {event.name} at {start}")
         if end > now:
             scheduler.add_job(end_event, 'date', run_date=end, args=[event.id], id=f"end_{event.id}")
             print(f"Scheduled end for: {event.name} at {end}")
+
+@bot.event
+async def on_scheduled_event_create(event):
+    now = datetime.datetime.now(EASTERN)
+    if event.entity_type != discord.EntityType.voice:
+        return
+    start = event.start_time.astimezone(EASTERN) + datetime.timedelta(minutes=2)
+    end = event.start_time.astimezone(EASTERN) + datetime.timedelta(minutes=5)
+    if start > now:
+        scheduler.add_job(start_event, 'date', run_date=start, args=[event.id], id=f"start_{event.id}")
+        print(f"New event detected, scheduled start for: {event.name} at {start}")
+    if end > now:
+        scheduler.add_job(end_event, 'date', run_date=end, args=[event.id], id=f"end_{event.id}")
+        print(f"New event detected, scheduled end for: {event.name} at {end}")
 
 @tasks.loop(hours=1)
 async def refresh_schedule():
